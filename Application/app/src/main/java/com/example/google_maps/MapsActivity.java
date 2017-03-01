@@ -22,7 +22,9 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import org.json.JSONObject;
@@ -50,6 +52,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public final static int MY_PERMISSIONS_REQUEST_FINE_LOCATION = 1600;
     private LocationRequest mLocationRequest;
     private LatLng coordinates;
+    private Marker origin;
+    private Polyline route;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -171,29 +175,74 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
+
+    //still retains previous origin AND previous polyline route when location changed
+    //try to remove these by storing origin and polyline in variables?
+
     private void handleNewLocation(Location location) {
-        Log.d(TAG, location.toString());
-        double currentLatitude = location.getLatitude();
-        double currentLongitude = location.getLongitude();
-        LatLng latLng = new LatLng(currentLatitude, currentLongitude);
 
-        MarkerOptions options = new MarkerOptions()
-                .position(latLng)
-                .title("I am here!");
-        System.out.println ("Adding Marker");
-        mMap.addMarker(options);
-        //mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+        if (origin == null) {
+            Log.d(TAG, location.toString());
+            double currentLatitude = location.getLatitude();
+            double currentLongitude = location.getLongitude();
+            LatLng latLng = new LatLng(currentLatitude, currentLongitude);
 
-        // Getting URL to the Google Directions API
-        String url = getUrl(latLng, coordinates);
-        Log.d("onMapClick", url.toString());
-        FetchUrl fetchUrl = new FetchUrl();
+            MarkerOptions options = new MarkerOptions()
+                    .position(latLng)
+                    .title("I am here!");
+            System.out.println("Adding Marker");
+            origin = mMap.addMarker(options);
+            //mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
 
-        // Start downloading json data from Google Directions API
-        fetchUrl.execute(url);
+            // Getting URL to the Google Directions API
+            String url = getUrl(latLng, coordinates);
+            Log.d("onMapClick", url.toString());
+            FetchUrl fetchUrl = new FetchUrl();
 
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-        mMap.animateCamera(CameraUpdateFactory.zoomTo(11));
+            // Start downloading json data from Google Directions API
+            fetchUrl.execute(url);
+
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+            mMap.animateCamera(CameraUpdateFactory.zoomTo(11));
+        }
+
+        else {
+            origin.remove();
+            route.remove();
+            Log.d(TAG, location.toString());
+            double currentLatitude = location.getLatitude();
+            double currentLongitude = location.getLongitude();
+            LatLng latLng = new LatLng(currentLatitude, currentLongitude);
+
+            MarkerOptions options = new MarkerOptions()
+                    .position(latLng)
+                    .title("I am here!");
+            System.out.println("Adding Marker");
+            origin = mMap.addMarker(options);
+            //mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+
+            // Getting URL to the Google Directions API
+            String url = getUrl(latLng, coordinates);
+            Log.d("onMapClick", url.toString());
+            FetchUrl fetchUrl = new FetchUrl();
+
+            // Start downloading json data from Google Directions API
+            fetchUrl.execute(url);
+
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+            mMap.animateCamera(CameraUpdateFactory.zoomTo(11));
+        }
+
+//        // Getting URL to the Google Directions API
+//        String url = getUrl(latLng, coordinates);
+//        Log.d("onMapClick", url.toString());
+//        FetchUrl fetchUrl = new FetchUrl();
+//
+//        // Start downloading json data from Google Directions API
+//        fetchUrl.execute(url);
+//
+//        mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+//        mMap.animateCamera(CameraUpdateFactory.zoomTo(11));
     }
 
     /**
@@ -333,7 +382,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             // Drawing polyline in the Google Map for the i-th route
             if(lineOptions != null) {
-                mMap.addPolyline(lineOptions);
+                route = mMap.addPolyline(lineOptions);
             }
             else {
                 Log.d("onPostExecute","without Polylines drawn");
